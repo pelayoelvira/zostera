@@ -82,7 +82,7 @@ def combined_loss(y_true, y_pred, alpha=0.7, smooth=1e-6):
     return alpha * precision + (1 - alpha) * recall
 
 # Carga del modelo con los objetos personalizados
-model = load_model('trainingCopy_model1.1.keras', custom_objects={'dice_loss': combined_loss,
+model = load_model('models/trainingCopy_model1.1.keras', custom_objects={'dice_loss': combined_loss,
                                                   'positive_precision': positive_precision,
                                                   'positive_recall': positive_recall,
                                                   'pixel_accuracy': pixel_accuracy})

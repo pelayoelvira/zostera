@@ -5,7 +5,7 @@ import time
 from load_dataset_copy import load_dataset
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from keras.callbacks import ModelCheckpoint
-from keras_unet import get_model  # Asegúrate de que esta función esté definida para tu modelo UNET
+from model_script.keras_unet import get_model  # Asegúrate de que esta función esté definida para tu modelo UNET
 import keras
 from loss import positive_precision, positive_recall, pixel_accuracy, combined_loss, dice_loss
 from tifffile import imwrite  # Usamos imwrite en lugar de imsave
