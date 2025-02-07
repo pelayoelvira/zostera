@@ -29,6 +29,9 @@ keras.optimizers.AdamW(learning_rate=3e-4)
 2. """" -- Combine Loss
 PEOR
 
-3. Combine loss -- Normalize
+3. Combine loss -- Normalize -- Mejor con Normalize
 
-#los 1.1 son filtrado, por eso son mejores
+#los 1.1 son filtrado, por eso son mejores 
+
+####
+Copy es la version a priori mas eficiente, con la que no saltan warnings de memoria
