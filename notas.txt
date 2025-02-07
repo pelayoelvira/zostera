@@ -1,0 +1,34 @@
+1. # Callbacks
+early_stopping = EarlyStopping(monitor='val_loss', patience=20, mode='min')
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=0.000001)
+keras.optimizers.AdamW(learning_rate=2e-4),
+100 epocs
+
+2.
+# Callbacks
+early_stopping = EarlyStopping(monitor='val_loss', patience=30, mode='min')
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, min_lr=0.000001)
+keras.optimizers.AdamW(learning_rate=3e-4)
+500 epocs
+
+3.
+# Callbacks
+early_stopping = EarlyStopping(monitor='val_loss', patience=30, mode='min')
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, min_lr=0.000001)
+keras.optimizers.AdamW(learning_rate=3e-4)
+500 epocs
+
+#########################
+
+1.# Callbacks
+early_stopping = EarlyStopping(monitor='val_loss', patience=30, mode='min')
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, min_lr=0.000001)
+keras.optimizers.AdamW(learning_rate=3e-4)
+500 epocs -- Dice val_loss
+
+2. """" -- Combine Loss
+PEOR
+
+3. Combine loss -- Normalize
+
+#los 1.1 son filtrado, por eso son mejores
