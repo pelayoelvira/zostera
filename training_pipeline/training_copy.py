@@ -6,6 +6,7 @@ from training_pipeline.load_dataset_copy import load_dataset
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from keras.callbacks import ModelCheckpoint
 import sys
+from keras.callbacks import TensorBoard
 from model_script.keras_unet import get_model
 import keras
 from training_pipeline.loss import positive_precision, positive_recall, pixel_accuracy, combined_loss, dice_loss
@@ -48,26 +49,28 @@ model.summary()
 # Callbacks
 early_stopping = EarlyStopping(monitor='val_loss', patience=30, mode='min')
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.25, patience=10, min_lr=1e-6)
+tensorboard_callback = TensorBoard(log_dir='./logs', histogram_freq=1, write_graph=False, write_images=True)
 
-class SavePredictionsCallback(keras.callbacks.Callback):
-    def __init__(self, val_data, output_dir="epoch_predictions"):
-        super(SavePredictionsCallback, self).__init__()
-        self.val_data = val_data
-        self.output_dir = output_dir
-        os.makedirs(self.output_dir, exist_ok=True)
 
-    def on_epoch_end(self, epoch, logs=None):
-        # Para evitar que el iterador se agote, usamos .take(1)
-        val_batch = next(iter(self.val_data.take(1)))
-        val_images, val_masks = val_batch
-        predictions = self.model.predict(val_images)
-        predictions = (predictions * 255).astype(np.uint8)
-        epoch_dir = os.path.join(self.output_dir, f"epoch_{epoch + 1}")
-        os.makedirs(epoch_dir, exist_ok=True)
-        for i in range(min(5, val_images.shape[0])):
-            imwrite(os.path.join(epoch_dir, f"input_{i}.tif"), (val_images[i].numpy() * 255).astype(np.uint8))
-            imwrite(os.path.join(epoch_dir, f"mask_{i}.tif"), (val_masks[i].numpy() * 255).astype(np.uint8))
-            imwrite(os.path.join(epoch_dir, f"pred_{i}.tif"), predictions[i])
+# class SavePredictionsCallback(keras.callbacks.Callback):
+#     def __init__(self, val_data, output_dir="epoch_predictions"):
+#         super(SavePredictionsCallback, self).__init__()
+#         self.val_data = val_data
+#         self.output_dir = output_dir
+#         os.makedirs(self.output_dir, exist_ok=True)
+
+#     def on_epoch_end(self, epoch, logs=None):
+#         # Para evitar que el iterador se agote, usamos .take(1)
+#         val_batch = next(iter(self.val_data.take(1)))
+#         val_images, val_masks = val_batch
+#         predictions = self.model.predict(val_images)
+#         predictions = (predictions * 255).astype(np.uint8)
+#         epoch_dir = os.path.join(self.output_dir, f"epoch_{epoch + 1}")
+#         os.makedirs(epoch_dir, exist_ok=True)
+#         for i in range(min(5, val_images.shape[0])):
+#             imwrite(os.path.join(epoch_dir, f"input_{i}.tif"), (val_images[i].numpy() * 255).astype(np.uint8))
+#             imwrite(os.path.join(epoch_dir, f"mask_{i}.tif"), (val_masks[i].numpy() * 255).astype(np.uint8))
+#             imwrite(os.path.join(epoch_dir, f"pred_{i}.tif"), predictions[i])
 
 class TimeLoggingCallback(keras.callbacks.Callback):
     def __init__(self):
@@ -113,7 +116,7 @@ model.fit(
     train_dataset,
     epochs=500,
     validation_data=val_dataset,
-    callbacks=[early_stopping, reduce_lr, TimeLoggingCallback(), checkpoint],
+    callbacks=[early_stopping, reduce_lr, TimeLoggingCallback(), checkpoint, tensorboard_callback],
     verbose=2
 )
 
