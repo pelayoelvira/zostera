@@ -2,12 +2,13 @@ import os
 import tensorflow as tf
 import numpy as np
 import time
-from load_dataset_copy import load_dataset
+from training_pipeline.load_dataset_copy import load_dataset
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from keras.callbacks import ModelCheckpoint
-from model_script.keras_unet import get_model  # Asegúrate de que esta función esté definida para tu modelo UNET
+import sys
+from model_script.keras_unet import get_model
 import keras
-from loss import positive_precision, positive_recall, pixel_accuracy, combined_loss, dice_loss
+from training_pipeline.loss import positive_precision, positive_recall, pixel_accuracy, combined_loss, dice_loss
 from tifffile import imwrite  # Usamos imwrite en lugar de imsave
 
 # Rutas y patrón de archivos
@@ -90,7 +91,7 @@ class TimeLoggingCallback(keras.callbacks.Callback):
 
 # Callback para guardar el mejor modelo basado en la pérdida de validación
 checkpoint = ModelCheckpoint(
-    "trainingCopy_model1.1.keras",  # Nombre del archivo para guardar
+    "pruebas.keras",  # Nombre del archivo para guardar
     monitor="val_loss",  # Métrica que se supervisará
     save_best_only=True,  # Solo guarda el mejor modelo
     mode="min",  # Queremos minimizar la pérdida
