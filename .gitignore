@@ -174,3 +174,4 @@ cython_debug/
 Data/
 image_prediction/
 patches_prediction/
+logs/
