@@ -9,7 +9,8 @@ import sys
 from keras.callbacks import TensorBoard
 from model_script.keras_unet import get_model
 import keras
-from training_pipeline.loss import positive_precision, positive_recall, pixel_accuracy, combined_loss, dice_loss
+from functools import partial
+from training_pipeline.loss import positive_precision, positive_recall, pixel_accuracy, CombinedLoss, dice_loss
 from tifffile import imwrite  # Usamos imwrite en lugar de imsave
 
 # Rutas y patrón de archivos
@@ -49,7 +50,7 @@ model.summary()
 # Callbacks
 early_stopping = EarlyStopping(monitor='val_loss', patience=30, mode='min')
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.25, patience=10, min_lr=1e-6)
-tensorboard_callback = TensorBoard(log_dir='./logs', histogram_freq=1, write_graph=False, write_images=True)
+tensorboard_callback = TensorBoard(log_dir='./logs', histogram_freq=1, write_graph=False, write_images=False)
 
 
 # class SavePredictionsCallback(keras.callbacks.Callback):
@@ -101,12 +102,17 @@ checkpoint = ModelCheckpoint(
     verbose=1  # Mensajes de guardado
 )
 
-# Compilar el modelo
+
+# Define el valor de alpha que deseas
+alpha_value = 0.6
+
+# Compila el modelo usando la clase de pérdida personalizada
 model.compile(
     optimizer=keras.optimizers.AdamW(learning_rate=2e-4),
-    loss=combined_loss,
+    loss=CombinedLoss(alpha=alpha_value),
     metrics=[positive_precision, positive_recall, pixel_accuracy]
 )
+
 
 # Calcular los pasos por época usando el número de ejemplos de entrenamiento
 steps_per_epoch = train_count // batch_size

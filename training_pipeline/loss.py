@@ -65,29 +65,29 @@ def pixel_accuracy(y_true, y_pred):
 
 
 
-def precision_loss(y_true, y_pred, smooth=1e-6):
-    y_true_f = tf.reshape(y_true, [-1])
-    #y_true_f = tf.cast(y_true_f, tf.float32)
-    y_pred_f = tf.reshape(y_pred, [-1])
-    # Eliminamos tf.round para evitar problemas con gradientes
-    true_positives = tf.reduce_sum(y_true_f * y_pred_f)
-    predicted_positives = tf.reduce_sum(y_pred_f)
-    precision = (true_positives + smooth) / (predicted_positives + smooth)
-    return 1 - precision
+class CombinedLoss(tf.keras.losses.Loss):
+    def __init__(self, alpha=0.6, smooth=1e-6, name="combined_loss", **kwargs):
+        super(CombinedLoss, self).__init__(name=name, **kwargs)
+        self.alpha = alpha
+        self.smooth = smooth
 
-def recall_loss(y_true, y_pred, smooth=1e-6):
-    y_true_f = tf.reshape(y_true, [-1])
-    # y_true_f = tf.cast(y_true_f, tf.float32)
-    y_pred_f = tf.reshape(y_pred, [-1])
-    true_positives = tf.reduce_sum(y_true_f * y_pred_f)
-    actual_positives = tf.reduce_sum(y_true_f)
-    recall = (true_positives + smooth) / (actual_positives + smooth)
-    return 1 - recall
+    def call(self, y_true, y_pred):
+        y_true_f = tf.reshape(y_true, [-1])
+        y_pred_f = tf.reshape(y_pred, [-1])
+        true_positives = tf.reduce_sum(y_true_f * y_pred_f)
+        predicted_positives = tf.reduce_sum(y_pred_f)
+        actual_positives = tf.reduce_sum(y_true_f)
+        precision = (true_positives + self.smooth) / (predicted_positives + self.smooth)
+        recall = (true_positives + self.smooth) / (actual_positives + self.smooth)
+        return self.alpha * (1 - precision) + (1 - self.alpha) * (1 - recall)
 
-def combined_loss(y_true, y_pred, alpha=0.6, smooth=1e-6):
-    precision = precision_loss(y_true, y_pred, smooth)
-    recall = recall_loss(y_true, y_pred, smooth)
-    return alpha * precision + (1 - alpha) * recall
+    def get_config(self):
+        config = super(CombinedLoss, self).get_config()
+        config.update({
+            "alpha": self.alpha,
+            "smooth": self.smooth
+        })
+        return config
 
 
 
