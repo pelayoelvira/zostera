@@ -3,11 +3,12 @@ import time
 import tensorflow as tf
 import numpy as np
 import optuna
+import keras
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
-from model_script.keras_unet_tune import get_model  # Asegúrate de que esta función esté definida para tu modelo UNET
-from loss import positive_precision, positive_recall, pixel_accuracy, combined_loss, dice_loss
+from model_script.keras_unet_tune import get_model  
+from training_pipeline.loss import positive_precision, positive_recall, pixel_accuracy, CombinedLoss, dice_loss
 from tifffile import imwrite
-from load_dataset_copy import load_dataset
+from training_pipeline.load_dataset_copy import load_dataset
 
 # Rutas y patrón de archivos
 image_dir = "Data/filtered_patches/images/*.tif"
@@ -31,26 +32,6 @@ if physical_devices:
         print(e)
 else:
     print("No se encontró GPU disponible.")
-
-# Callbacks
-class SavePredictionsCallback(tf.keras.callbacks.Callback):
-    def __init__(self, val_data, output_dir="epoch_predictions"):
-        super(SavePredictionsCallback, self).__init__()
-        self.val_data = val_data
-        self.output_dir = output_dir
-        os.makedirs(self.output_dir, exist_ok=True)
-
-    def on_epoch_end(self, epoch, logs=None):
-        val_batch = next(iter(self.val_data.take(1)))
-        val_images, val_masks = val_batch
-        predictions = self.model.predict(val_images)
-        predictions = (predictions * 255).astype(np.uint8)
-        epoch_dir = os.path.join(self.output_dir, f"epoch_{epoch + 1}")
-        os.makedirs(epoch_dir, exist_ok=True)
-        for i in range(min(5, val_images.shape[0])):
-            imwrite(os.path.join(epoch_dir, f"input_{i}.tif"), (val_images[i].numpy() * 255).astype(np.uint8))
-            imwrite(os.path.join(epoch_dir, f"mask_{i}.tif"), (val_masks[i].numpy() * 255).astype(np.uint8))
-            imwrite(os.path.join(epoch_dir, f"pred_{i}.tif"), predictions[i])
 
 class TimeLoggingCallback(tf.keras.callbacks.Callback):
     def __init__(self):
@@ -79,6 +60,7 @@ def objective(trial):
     reduce_lr_factor = trial.suggest_float("reduce_lr_factor", 0.1, 0.5, step=0.05)
     early_stopping_patience = trial.suggest_int("early_stopping_patience", 10, 30)
     reduce_lr_patience = trial.suggest_int("reduce_lr_patience", 5, 15)
+    alpha_value = trial.suggest_float("alpha", 0.1, 0.9)
     
     # Configuración del dataset con batching dinámico
     train_dataset = train_ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
@@ -92,13 +74,13 @@ def objective(trial):
     early_stopping = EarlyStopping(monitor='val_loss', patience=early_stopping_patience, mode='min')
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=reduce_lr_factor, patience=reduce_lr_patience, min_lr=1e-6)
     checkpoint = ModelCheckpoint(
-        "best_model_1.keras", monitor="val_loss", save_best_only=True, mode="min", verbose=1
+        "best_model_tuned.keras", monitor="val_loss", save_best_only=True, mode="min", verbose=1
     )
 
     # Compilar el modelo
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
-        loss=dice_loss,
+        optimizer=keras.optimizers.AdamW(learning_rate=learning_rate),
+        loss=CombinedLoss(alpha=alpha_value),
         metrics=[positive_precision, positive_recall, pixel_accuracy]
     )
 
@@ -124,7 +106,7 @@ def objective(trial):
 
 
 # Configurar Optuna para guardar en SQLite
-study = optuna.create_study(direction="minimize", storage="sqlite:///optuna_study_dice.db", load_if_exists=False)
+study = optuna.create_study(direction="minimize", storage="sqlite:///optuna_study_combined.db", load_if_exists=False)
 
 # Optimizar
 study.optimize(objective, n_trials=30)
@@ -137,4 +119,4 @@ print("  Params:")
 for key, value in best_trial.params.items():
     print(f"    {key}: {value}")
 
-# Comando para iniciar el dashboard: optuna-dashboard sqlite:///optuna_study_1.db
+# Comando para iniciar el dashboard: optuna-dashboard sqlite:///optuna_study_combined.db
