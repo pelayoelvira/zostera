@@ -2,7 +2,7 @@ import os
 import tensorflow as tf
 import numpy as np
 import time
-from training_pipeline.load_dataset_copy import load_dataset
+from training_pipeline.load_dataset_v2 import load_dataset
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from keras.callbacks import ModelCheckpoint
 import sys
@@ -14,8 +14,8 @@ from training_pipeline.loss import positive_precision, positive_recall, pixel_ac
 from tifffile import imwrite  # Usamos imwrite en lugar de imsave
 
 # Rutas y patrón de archivos
-image_dir = "Data/filtered_patches/filtered_images/*.tif"
-mask_dir = "Data/filtered_patches/filtered_masks/*.tif"
+image_dir = "Data/filtered_patches/images/*.tif"
+mask_dir = "Data/filtered_patches/masks/*.tif"
 
 # Cargar los datasets y contadores de ejemplos
 train_ds, val_ds, test_ds, train_count, val_count, test_count = load_dataset(image_dir, mask_dir)
@@ -43,9 +43,10 @@ if physical_devices:
 else:
     print("No se encontró GPU disponible.")
 
-# Crear el modelo (asegúrate de que get_model acepte el tamaño de entrada adecuado)
+# # Crear el modelo (asegúrate de que get_model acepte el tamaño de entrada adecuado)
 model = get_model(img_size=(img_height, img_width))
 model.summary()
+
 
 # Callbacks
 early_stopping = EarlyStopping(monitor='val_loss', patience=30, mode='min')

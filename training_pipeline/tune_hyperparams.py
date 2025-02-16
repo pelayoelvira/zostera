@@ -8,7 +8,7 @@ from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from model_script.keras_unet_tune import get_model  
 from training_pipeline.loss import positive_precision, positive_recall, pixel_accuracy, CombinedLoss, dice_loss
 from tifffile import imwrite
-from training_pipeline.load_dataset_copy import load_dataset
+from training_pipeline.load_dataset_v2 import load_dataset
 
 # Rutas y patrón de archivos
 image_dir = "Data/filtered_patches/images/*.tif"

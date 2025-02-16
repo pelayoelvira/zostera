@@ -19,7 +19,7 @@ def read_mask(filename):
     mask = mask / 255.0
     return mask
 
-def load_dataset(image_pattern, mask_pattern, test_size=0.15, random_state=42):
+def load_dataset(image_pattern, mask_pattern, test_size=0.1, random_state=42):
     image_files = sorted(glob.glob(image_pattern))
     mask_files = sorted(glob.glob(mask_pattern))
     print('\nPrimeras rutas de imágenes:', image_files[:5])
@@ -27,8 +27,11 @@ def load_dataset(image_pattern, mask_pattern, test_size=0.15, random_state=42):
     
     train_val_images, test_images, train_val_masks, test_masks = train_test_split(
         image_files, mask_files, test_size=test_size, random_state=random_state)
+    
+    # Ajustar el tamaño de val_size dentro de train+val para obtener el 20% de los datos
+    val_size_adjusted = 0.2 / (1 - test_size)  # Ajuste para que val sea 20% del total
     train_images, val_images, train_masks, val_masks = train_test_split(
-        train_val_images, train_val_masks, test_size=0.1, random_state=random_state)
+        train_val_images, train_val_masks, test_size=val_size_adjusted, random_state=random_state)
     
     print("Cantidad de imágenes - Train: {}, Val: {}, Test: {}".format(len(train_images), len(val_images), len(test_images)))
     
