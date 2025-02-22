@@ -9,23 +9,18 @@ def dice_coef(y_true, y_pred, smooth=1e-6):
     intersection = tf.reduce_sum(y_true_f * y_pred_f)
     return (2. * intersection + smooth) / (tf.reduce_sum(y_true_f) + tf.reduce_sum(y_pred_f) + smooth)
 
-
-def dice_loss(y_true, y_pred, smooth=1e-6):
-    y_true_f = tf.reshape(y_true, [-1])
-    y_pred_f = tf.reshape(y_pred, [-1])
-    intersection = tf.reduce_sum(y_true_f * y_pred_f)
-    return 1 - (2. * intersection + smooth) / (tf.reduce_sum(y_true_f) + tf.reduce_sum(y_pred_f) + smooth)
+import tensorflow as tf
 
 @tf.keras.utils.register_keras_serializable()
-def weighted_dice_loss(y_true, y_pred, smooth=1e-6, foreground_weight=2.0):
-    y_true_f = tf.reshape(y_true, [-1])
-    y_pred_f = tf.reshape(y_pred, [-1])
+def dice_loss(y_true, y_pred, smooth=1e-6):
+    y_true_f = tf.reshape(y_true, (tf.shape(y_true)[0], -1))  # Mantiene la dimensión del batch
+    y_pred_f = tf.reshape(y_pred, (tf.shape(y_pred)[0], -1))  # Mantiene la dimensión del batch
     
-    # Peso aplicado a los píxeles de primer plano (1) y de fondo (0)
-    weights = tf.where(y_true_f == 1, foreground_weight, 1.0)
-    intersection = tf.reduce_sum(weights * y_true_f * y_pred_f)
+    intersection = tf.reduce_sum(y_true_f * y_pred_f, axis=1)  # Suma por cada muestra
+    dice_per_sample = (2. * intersection + smooth) / (tf.reduce_sum(y_true_f, axis=1) + tf.reduce_sum(y_pred_f, axis=1) + smooth)
     
-    return 1 - (2. * intersection + smooth) / (tf.reduce_sum(weights * y_true_f) + tf.reduce_sum(weights * y_pred_f) + smooth)
+    return 1 - tf.reduce_mean(dice_per_sample)  # Promedia la pérdida en el batch
+
 
 
 
@@ -63,6 +58,13 @@ def pixel_accuracy(y_true, y_pred):
     accuracy = tf.reduce_mean(tf.cast(correct_pixels, tf.float32))
     return accuracy
 
+def accuracy_loss(y_true, y_pred):
+    y_true_f = tf.reshape(y_true, [-1])
+    y_pred_f = tf.reshape(y_pred, [-1])
+    y_pred_f = tf.cast(tf.greater(y_pred_f, 0.5), tf.float32)  # Redondear predicciones
+    correct_pixels = tf.equal(y_true_f, y_pred_f)
+    accuracy = tf.reduce_mean(tf.cast(correct_pixels, tf.float32))
+    return 1 - accuracy
 
 
 class CombinedLoss(tf.keras.losses.Loss):
