@@ -22,6 +22,18 @@ def dice_loss(y_true, y_pred, smooth=1e-6):
     return 1 - tf.reduce_mean(dice_per_sample)  # Promedia la pérdida en el batch
 
 
+@tf.keras.utils.register_keras_serializable()
+def iou_loss(y_true, y_pred, smooth=1e-6):
+    y_true_f = tf.reshape(y_true, (-1,))
+    y_pred_f = tf.reshape(y_pred, (-1,))
+
+    intersection = tf.reduce_sum(y_true_f * y_pred_f)
+    union = tf.reduce_sum(y_true_f) + tf.reduce_sum(y_pred_f) - intersection
+
+    iou = (intersection + smooth) / (union + smooth)
+    return 1 - iou  # Como es una loss, se minimiza
+
+
 
 
 # Precision positiva
@@ -58,13 +70,6 @@ def pixel_accuracy(y_true, y_pred):
     accuracy = tf.reduce_mean(tf.cast(correct_pixels, tf.float32))
     return accuracy
 
-def accuracy_loss(y_true, y_pred):
-    y_true_f = tf.reshape(y_true, [-1])
-    y_pred_f = tf.reshape(y_pred, [-1])
-    y_pred_f = tf.cast(tf.greater(y_pred_f, 0.5), tf.float32)  # Redondear predicciones
-    correct_pixels = tf.equal(y_true_f, y_pred_f)
-    accuracy = tf.reduce_mean(tf.cast(correct_pixels, tf.float32))
-    return 1 - accuracy
 
 
 class CombinedLoss(tf.keras.losses.Loss):
