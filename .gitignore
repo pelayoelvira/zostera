@@ -175,3 +175,7 @@ Data/
 image_prediction/
 patches_prediction/
 logs/
+.tif
+*.tif
+*.keras
+*.geojson

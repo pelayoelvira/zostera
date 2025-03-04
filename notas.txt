@@ -35,3 +35,10 @@ PEOR
 
 ####
 Copy es la version a priori mas eficiente, con la que no saltan warnings de memoria
+
+
+################################
+################################
+
+EXP1 - ELIMINAR PATCHES SIN REGION DE INTERES (COMPLETAMENTE NEGROS)
+EXP2 - PROBAR DISTINTAS RESOLUCIONES IMAGES/MASK 0.1m - IMAGES_2/MASK_2 0.05m
