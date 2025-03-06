@@ -42,12 +42,12 @@ def calculate_accuracy(geojson_path, tiff_path, rgb_path):
     for _, row in filtered_points.iterrows():
         longitude, latitude = row['dwc:decimalLongitude'], row['dwc:decimalLatitude']
         habitat = row['dwc:habitat'].strip().lower()
-        is_present = habitat in ['nano', 'nanozos', 'zos']
+        is_present = habitat in ['nano']
         
         # Convertir las coordenadas en índices de píxel para la máscara
-        col, r = rowcol(transform, longitude, latitude)
+        r, col = rowcol(transform, longitude, latitude)
         # Convertir las coordenadas en índices de píxel para la imagen RGB
-        rgb_col, rgb_row = rowcol(rgb_transform, longitude, latitude)
+        rgb_row, rgb_col = rowcol(rgb_transform, longitude, latitude)
         
         # Verificar en la imagen RGB para descartar puntos en zonas de relleno (saturación)
         if 0 <= rgb_row < rgb_height and 0 <= rgb_col < rgb_width:
@@ -68,8 +68,9 @@ def calculate_accuracy(geojson_path, tiff_path, rgb_path):
 
 # Ejemplo de uso
 geojson_path = 'Data/groundtruth_Villaviciosa.geojson'
-tiff_path = 'experiment_1/filtrado.tif'
+real_mask = 'Data/RESIZED/image_to_predict_2/RESIZED_MASK_20240410_VILLAVICIOSA_IZQ1.tif'
+mask = 'experiment_1/filtrado.tif'
 rgb_path = 'Data/RESIZED/image_to_predict_2/RESIZED_20240410_VILLAVICIOSA_IZQ1.tif'
 
-accuracy = calculate_accuracy(geojson_path, tiff_path, rgb_path)
+accuracy = calculate_accuracy(geojson_path, real_mask, rgb_path)
 print(f'Porcentaje de aciertos: {accuracy:.2f}%')
