@@ -1,12 +1,12 @@
-# Monitorización de la presencia de Nanozostera Noltei en la ría de Villaviciosa
+# Monitoring the Presence of Nanozostera noltei in the Villaviciosa Estuary
 
-Este proyecto es una colaboración entre el Grupo de Ecología de Angiospermas Marinas del Instituto Español de Oceanografía (IEO-CSIC) y el área de Machine Learning de la Universidad de Oviedo. Su objetivo es desarrollar un sistema basado en redes neuronales profundas para la segmentación automática de praderas de Nanozostera noltei en imágenes capturadas por dron en la ría de Villaviciosa.
+This project is a collaboration between the Marine Angiosperm Ecology Group of the Spanish Institute of Oceanography (IEO-CSIC) and the Machine Learning area of the University of Oviedo. Its objective is to develop a deep neural network-based system for the automatic segmentation of Nanozostera noltei meadows in drone-captured images of the Villaviciosa estuary.
 
-### Contexto
-Las praderas de Nanozostera noltei son ecosistemas marinos esenciales que proporcionan importantes servicios ecológicos, como la protección costera y la captura de carbono. Debido a su valor ecológico, están protegidas por normativas nacionales e internacionales, y su monitorización es clave para evaluar el impacto de las medidas de conservación.
+### Context
+Nanozostera noltei meadows are essential marine ecosystems that provide important ecological services, such as coastal protection and carbon sequestration. Due to their ecological value, they are protected by national and international regulations, and their monitoring is key to assessing the impact of conservation measures.
 
-### Problema
-Actualmente, la segmentación de estas praderas se realiza de forma manual, un proceso que es lento, costoso y poco escalable. La dependencia del operador introduce variabilidad en los resultados, y la segmentación manual no es viable para grandes volúmenes de imágenes.
+### Problem
+Currently, the segmentation of these meadows is performed manually, a process that is slow, costly, and not scalable. Operator dependence introduces variability in the results, and manual segmentation is not feasible for large volumes of images.
 
-### Solución propuesta
-Se plantea el uso de redes neuronales profundas para automatizar la segmentación, mejorando la precisión, rapidez y escalabilidad del proceso. Este enfoque permitirá identificar de manera eficiente las zonas de praderas de Nanozostera noltei, superando las limitaciones del método manual actual.
+### Proposed Solution
+The use of deep neural networks is proposed to automate segmentation, improving the accuracy, speed, and scalability of the process. This approach will efficiently identify Nanozostera noltei meadows, overcoming the limitations of the current manual method.
