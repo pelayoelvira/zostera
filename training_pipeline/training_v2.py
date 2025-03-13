@@ -10,19 +10,19 @@ from keras.callbacks import TensorBoard
 from model_script.keras_unet import get_model
 import keras
 from functools import partial
-from training_pipeline.loss import positive_precision, positive_recall, pixel_accuracy, CombinedLoss, dice_loss
+from training_pipeline.loss import positive_precision, positive_recall, pixel_accuracy, CombinedLoss, dice_loss, iou_loss
 from tifffile import imwrite  # Usamos imwrite en lugar de imsave
 
 # Rutas y patrón de archivos
-image_dir = "Data/filtered_patches/images/*.tif"
-mask_dir = "Data/filtered_patches/masks/*.tif"
+image_dir = "Data/filtered_patches/filtered_images/*.tif"
+mask_dir = "Data/filtered_patches/filtered_masks/*.tif"
 
 # Cargar los datasets y contadores de ejemplos
 train_ds, val_ds, test_ds, train_count, val_count, test_count = load_dataset(image_dir, mask_dir)
 
 img_height = 512
 img_width = 512
-batch_size = 8
+batch_size = 32
 
 # Preparar el dataset de entrenamiento (se repite indefinidamente),
 # y agrupar en batches con prefetch para rendimiento
@@ -50,8 +50,8 @@ model.summary()
 
 # Callbacks
 early_stopping = EarlyStopping(monitor='val_loss', patience=30, mode='min')
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.25, patience=10, min_lr=1e-6)
-tensorboard_callback = TensorBoard(log_dir='./logs', histogram_freq=1, write_graph=False, write_images=False)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, min_lr=1e-6)
+tensorboard_callback = TensorBoard(log_dir='experiment_1/logs_filtrado', histogram_freq=1, write_graph=False, write_images=False)
 
 
 # class SavePredictionsCallback(keras.callbacks.Callback):
@@ -96,7 +96,7 @@ class TimeLoggingCallback(keras.callbacks.Callback):
 
 # Callback para guardar el mejor modelo basado en la pérdida de validación
 checkpoint = ModelCheckpoint(
-    "pruebas.keras",  # Nombre del archivo para guardar
+    "experiment_1/filtrado.keras",  # Nombre del archivo para guardar
     monitor="val_loss",  # Métrica que se supervisará
     save_best_only=True,  # Solo guarda el mejor modelo
     mode="min",  # Queremos minimizar la pérdida
@@ -105,11 +105,11 @@ checkpoint = ModelCheckpoint(
 
 
 # Define el valor de alpha que deseas
-alpha_value = 0.6
+alpha_value = 0.5
 
 # Compila el modelo usando la clase de pérdida personalizada
 model.compile(
-    optimizer=keras.optimizers.AdamW(learning_rate=2e-4),
+    optimizer=keras.optimizers.AdamW(learning_rate=1e-4),
     loss=CombinedLoss(alpha=alpha_value),
     metrics=[positive_precision, positive_recall, pixel_accuracy]
 )
@@ -121,7 +121,7 @@ print("Steps per epoch:", steps_per_epoch)
 
 model.fit(
     train_dataset,
-    epochs=500,
+    epochs=2000,
     validation_data=val_dataset,
     callbacks=[early_stopping, reduce_lr, TimeLoggingCallback(), checkpoint, tensorboard_callback],
     verbose=2

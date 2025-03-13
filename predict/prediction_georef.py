@@ -26,10 +26,24 @@ else:
 # Definición de funciones personalizadas
 @tf.keras.utils.register_keras_serializable()
 def dice_loss(y_true, y_pred, smooth=1e-6):
-    y_true_f = tf.reshape(y_true, [-1])
-    y_pred_f = tf.reshape(y_pred, [-1])
+    y_true_f = tf.reshape(y_true, (tf.shape(y_true)[0], -1))  # Mantiene la dimensión del batch
+    y_pred_f = tf.reshape(y_pred, (tf.shape(y_pred)[0], -1))  # Mantiene la dimensión del batch
+    
+    intersection = tf.reduce_sum(y_true_f * y_pred_f, axis=1)  # Suma por cada muestra
+    dice_per_sample = (2. * intersection + smooth) / (tf.reduce_sum(y_true_f, axis=1) + tf.reduce_sum(y_pred_f, axis=1) + smooth)
+    
+    return 1 - tf.reduce_mean(dice_per_sample)  # Promedia la pérdida en el batch
+
+@tf.keras.utils.register_keras_serializable()
+def iou_loss(y_true, y_pred, smooth=1e-6):
+    y_true_f = tf.reshape(y_true, (-1,))
+    y_pred_f = tf.reshape(y_pred, (-1,))
+
     intersection = tf.reduce_sum(y_true_f * y_pred_f)
-    return 1 - (2. * intersection + smooth) / (tf.reduce_sum(y_true_f) + tf.reduce_sum(y_pred_f) + smooth)
+    union = tf.reduce_sum(y_true_f) + tf.reduce_sum(y_pred_f) - intersection
+
+    iou = (intersection + smooth) / (union + smooth)
+    return 1 - iou  # Como es una loss, se minimiza
 
 @tf.keras.utils.register_keras_serializable()
 def positive_precision(y_true, y_pred, smooth=1e-6):
@@ -58,6 +72,7 @@ def pixel_accuracy(y_true, y_pred):
     correct_pixels = tf.equal(y_true_f, tf.round(y_pred_f))
     accuracy = tf.reduce_mean(tf.cast(correct_pixels, tf.float32))
     return accuracy
+
 def precision_loss(y_true, y_pred, smooth=1e-6):
     y_true_f = tf.reshape(y_true, [-1])
     y_pred_f = tf.reshape(y_pred, [-1])
@@ -76,19 +91,39 @@ def recall_loss(y_true, y_pred, smooth=1e-6):
     return 1 - recall
 
 @tf.keras.utils.register_keras_serializable()
-def combined_loss(y_true, y_pred, alpha=0.7, smooth=1e-6):
-    precision = precision_loss(y_true, y_pred, smooth)
-    recall = recall_loss(y_true, y_pred, smooth)
-    return alpha * precision + (1 - alpha) * recall
+class CombinedLoss(tf.keras.losses.Loss):
+    def __init__(self, alpha=0.6, smooth=1e-6, name="combined_loss", **kwargs):
+        super(CombinedLoss, self).__init__(name=name, **kwargs)
+        self.alpha = alpha
+        self.smooth = smooth
+
+    def call(self, y_true, y_pred):
+        y_true_f = tf.reshape(y_true, [-1])
+        y_pred_f = tf.reshape(y_pred, [-1])
+        true_positives = tf.reduce_sum(y_true_f * y_pred_f)
+        predicted_positives = tf.reduce_sum(y_pred_f)
+        actual_positives = tf.reduce_sum(y_true_f)
+        precision = (true_positives + self.smooth) / (predicted_positives + self.smooth)
+        recall = (true_positives + self.smooth) / (actual_positives + self.smooth)
+        return self.alpha * (1 - precision) + (1 - self.alpha) * (1 - recall)
+
+    def get_config(self):
+        config = super(CombinedLoss, self).get_config()
+        config.update({
+            "alpha": self.alpha,
+            "smooth": self.smooth
+        })
+        return config
+
 
 # Carga del modelo con los objetos personalizados
-model = load_model('models/trainingCopy_model1.1.keras', custom_objects={'dice_loss': combined_loss,
+model = load_model('experiment_1/filtrado.keras', custom_objects={'CombinedLoss': CombinedLoss,
                                                   'positive_precision': positive_precision,
                                                   'positive_recall': positive_recall,
                                                   'pixel_accuracy': pixel_accuracy})
 
 # Carga la imagen de alta resolución usando rasterio
-input_path = 'Data/RESIZED/image_to_predict/RESIZED_20240410_VILLAVICIOSA_IZQ1.tif'
+input_path = 'Data/RESIZED/image_to_predict/RESIZED_20240411_VILLAVICIOSA_BORNIZAL3.tif'
 with rasterio.open(input_path) as src:
     imagen = src.read(out_shape=(src.count, src.height, src.width), resampling=Resampling.nearest)
     imagen = np.moveaxis(imagen, 0, -1)  # Cambiar el eje para tener (alto, ancho, canales)
@@ -128,7 +163,7 @@ for i in range(patches.shape[0]):
         pred = model.predict(patch)
         pred = tf.squeeze(pred, axis=(0, 3))  # Eliminar dimensiones extra
         pred = pred.numpy()  # Convertir tensor a NumPy
-        predicted_patches[i, j] = (pred > 0.5).astype(np.uint8) * 255  # Escalar a 0-255
+        predicted_patches[i, j] = (pred >= 0.99).astype(np.uint8) * 255  # Escalar a 0-255
         
         # Guardar la máscara de cada parche
         patch_filename = os.path.join(output_dir, f'patch_{i}_{j}.tif')
@@ -150,7 +185,7 @@ mascara_predicha = unpatchify(predicted_patches, (nuevo_alto, nuevo_ancho))
 mascara_predicha = cv2.resize(mascara_predicha, (imagen.shape[1], imagen.shape[0]), interpolation=cv2.INTER_NEAREST)
 
 # Actualiza los metadatos originales para la máscara predicha
-output_mask_path = '1.1_Copy_villaviciosa_IZQ1.tif'
+output_mask_path = 'experiment_1/filtrado.tif'
 output_meta = original_meta.copy()
 output_meta.update({
     "driver": "GTiff",
