@@ -3,6 +3,7 @@ import rasterio
 from rasterio.transform import rowcol
 import numpy as np
 from shapely.geometry import box
+import seaborn as sns
 
 def calculate_accuracy(geojson_path, tiff_path, rgb_path):
     # Cargar el groundtruth
@@ -36,8 +37,13 @@ def calculate_accuracy(geojson_path, tiff_path, rgb_path):
         print("No hay puntos dentro de la región de la máscara.")
         return 0
     
+    # Inicializar contadores para aciertos y matriz de confusión
     correct = 0
     total = 0
+    tp = 0  # Verdaderos positivos
+    tn = 0  # Verdaderos negativos
+    fp = 0  # Falsos positivos
+    fn = 0  # Falsos negativos
     
     for _, row in filtered_points.iterrows():
         longitude, latitude = row['dwc:decimalLongitude'], row['dwc:decimalLatitude']
@@ -49,28 +55,60 @@ def calculate_accuracy(geojson_path, tiff_path, rgb_path):
         # Convertir las coordenadas en índices de píxel para la imagen RGB
         rgb_row, rgb_col = rowcol(rgb_transform, longitude, latitude)
         
-        # Verificar en la imagen RGB para descartar puntos en zonas de relleno (saturación)
+        # Verificar en la imagen RGB para descartar puntos en zonas de saturación (blanca)
         if 0 <= rgb_row < rgb_height and 0 <= rgb_col < rgb_width:
             pixel_rgb = rgb_data[:, rgb_row, rgb_col]
             max_val = 255 if np.issubdtype(rgb_dtype, np.uint8) else 65535
             if np.all(pixel_rgb >= max_val - 5):
-                continue  # Descarta este punto si cae en zona saturada (blanca)
+                continue  # Descarta este punto si cae en zona saturada
         
         # Verificar que el punto se encuentre dentro de la región de la máscara
         if 0 <= r < height and 0 <= col < width:
-            pixel_value = tiff_data[r, col] > 0
-            if (is_present and pixel_value) or (not is_present and not pixel_value):
-                correct += 1
+            mask_present = tiff_data[r, col] > 0
+            if is_present:
+                if mask_present:
+                    tp += 1
+                    correct += 1
+                else:
+                    fn += 1
+            else:
+                if not mask_present:
+                    tn += 1
+                    correct += 1
+                else:
+                    fp += 1
             total += 1
     
     accuracy = (correct / total) * 100 if total > 0 else 0
+    print(f'Accuracy: {accuracy:.2f}%')
+    print("Confusion Matrix:")
+    print(f"TP (True Positives): {tp}")
+    print(f"TN (True Negatives): {tn}")
+    print(f"FP (False Positives): {fp}")
+    print(f"FN (False Negatives): {fn}")
+
+    # Create and save a confusion matrix figure using seaborn
+    import matplotlib.pyplot as plt
+
+    conf_matrix = np.array([[tp, fp],
+                            [fn, tn]])
+
+    plt.figure(figsize=(6, 4))
+    ax = sns.heatmap(conf_matrix, annot=True, fmt="d", cbar=False,
+                     xticklabels=["Predicted Positive", "Predicted Negative"],
+                     yticklabels=["Real Positive", "Real Negative"])
+    ax.set_xlabel("Prediction")
+    ax.set_ylabel("Real")
+    ax.set_title("Confusion Matrix")
+    plt.tight_layout()
+    plt.savefig("confusion_matrix.svg", format="svg")
+    plt.close()
     return accuracy
 
 # Ejemplo de uso
 geojson_path = 'Data/groundtruth_Villaviciosa.geojson'
-real_mask = 'Data/RESIZED/image_to_predict_2/RESIZED_MASK_20240410_VILLAVICIOSA_IZQ1.tif'
-mask = 'experiment_1/filtrado.tif'
-rgb_path = 'Data/RESIZED/image_to_predict_2/RESIZED_20240410_VILLAVICIOSA_IZQ1.tif'
+real_mask = 'Data/RESIZED/image_to_predict/RESIZED_MASK_20240411_VILLAVICIOSA_BORNIZAL3.tif'
+mask = 'experiment_1/sin_filtrar.tif'
+rgb_path = 'Data/RESIZED/image_to_predict/RESIZED_20240411_VILLAVICIOSA_BORNIZAL3.tif'
 
-accuracy = calculate_accuracy(geojson_path, real_mask, rgb_path)
-print(f'Porcentaje de aciertos: {accuracy:.2f}%')
+accuracy = calculate_accuracy(geojson_path, mask, rgb_path)
