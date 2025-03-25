@@ -176,6 +176,8 @@ Data/
 image_prediction/
 patches_prediction/
 logs/
+experiment_1/
+experiment_2/
 .tif
 *.tif
 *.keras
