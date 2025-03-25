@@ -14,8 +14,8 @@ from training_pipeline.loss import positive_precision, positive_recall, pixel_ac
 from tifffile import imwrite  # Usamos imwrite en lugar de imsave
 
 # Rutas y patrón de archivos
-image_dir = "Data/filtered_patches/filtered_images/*.tif"
-mask_dir = "Data/filtered_patches/filtered_masks/*.tif"
+image_dir = "Data/filtered_patches/filtered_images_2/*.tif"
+mask_dir = "Data/filtered_patches/filtered_masks_2/*.tif"
 
 # Cargar los datasets y contadores de ejemplos
 train_ds, val_ds, test_ds, train_count, val_count, test_count = load_dataset(image_dir, mask_dir)
@@ -49,9 +49,9 @@ model.summary()
 
 
 # Callbacks
-early_stopping = EarlyStopping(monitor='val_loss', patience=30, mode='min')
+early_stopping = EarlyStopping(monitor='val_loss', patience=30, mode='min', min_delta=0.000001)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, min_lr=1e-6)
-tensorboard_callback = TensorBoard(log_dir='experiment_1/logs_filtrado', histogram_freq=1, write_graph=False, write_images=False)
+tensorboard_callback = TensorBoard(log_dir='experiment_2/filtrado_2', histogram_freq=1, write_graph=False, write_images=False)
 
 
 # class SavePredictionsCallback(keras.callbacks.Callback):
@@ -96,7 +96,7 @@ class TimeLoggingCallback(keras.callbacks.Callback):
 
 # Callback para guardar el mejor modelo basado en la pérdida de validación
 checkpoint = ModelCheckpoint(
-    "experiment_1/filtrado.keras",  # Nombre del archivo para guardar
+    "experiment_2/filtardo_2.keras",  # Nombre del archivo para guardar
     monitor="val_loss",  # Métrica que se supervisará
     save_best_only=True,  # Solo guarda el mejor modelo
     mode="min",  # Queremos minimizar la pérdida

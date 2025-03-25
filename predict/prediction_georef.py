@@ -117,13 +117,13 @@ class CombinedLoss(tf.keras.losses.Loss):
 
 
 # Carga del modelo con los objetos personalizados
-model = load_model('experiment_1/filtrado.keras', custom_objects={'CombinedLoss': CombinedLoss,
+model = load_model('experiment_2/filtrado_2.keras', custom_objects={'CombinedLoss': CombinedLoss,
                                                   'positive_precision': positive_precision,
                                                   'positive_recall': positive_recall,
                                                   'pixel_accuracy': pixel_accuracy})
 
 # Carga la imagen de alta resolución usando rasterio
-input_path = 'Data/RESIZED/image_to_predict/RESIZED_20240411_VILLAVICIOSA_BORNIZAL3.tif'
+input_path = 'Data/RESIZED/image_to_predict_2/RESIZED_20240411_VILLAVICIOSA_BORNIZAL3.tif'
 with rasterio.open(input_path) as src:
     imagen = src.read(out_shape=(src.count, src.height, src.width), resampling=Resampling.nearest)
     imagen = np.moveaxis(imagen, 0, -1)  # Cambiar el eje para tener (alto, ancho, canales)
@@ -185,7 +185,7 @@ mascara_predicha = unpatchify(predicted_patches, (nuevo_alto, nuevo_ancho))
 mascara_predicha = cv2.resize(mascara_predicha, (imagen.shape[1], imagen.shape[0]), interpolation=cv2.INTER_NEAREST)
 
 # Actualiza los metadatos originales para la máscara predicha
-output_mask_path = 'experiment_1/filtrado.tif'
+output_mask_path = 'experiment_2/filtrado_2.tif'
 output_meta = original_meta.copy()
 output_meta.update({
     "driver": "GTiff",

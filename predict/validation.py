@@ -101,14 +101,14 @@ def calculate_accuracy(geojson_path, tiff_path, rgb_path):
     ax.set_ylabel("Real")
     ax.set_title("Confusion Matrix")
     plt.tight_layout()
-    plt.savefig("confusion_matrix.svg", format="svg")
+    plt.savefig("confusion_matrix_filtrado2.svg", format="svg")
     plt.close()
     return accuracy
 
 # Ejemplo de uso
 geojson_path = 'Data/groundtruth_Villaviciosa.geojson'
 real_mask = 'Data/RESIZED/image_to_predict/RESIZED_MASK_20240411_VILLAVICIOSA_BORNIZAL3.tif'
-mask = 'experiment_1/sin_filtrar.tif'
+mask = 'experiment_2/filtrado_2.tif'
 rgb_path = 'Data/RESIZED/image_to_predict/RESIZED_20240411_VILLAVICIOSA_BORNIZAL3.tif'
 
 accuracy = calculate_accuracy(geojson_path, mask, rgb_path)
