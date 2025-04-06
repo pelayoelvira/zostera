@@ -182,3 +182,4 @@ experiment_2/
 *.tif
 *.keras
 *.geojson
+*.db
