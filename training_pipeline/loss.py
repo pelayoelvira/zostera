@@ -9,37 +9,10 @@ def dice_coef(y_true, y_pred, smooth=1e-6):
     intersection = tf.reduce_sum(y_true_f * y_pred_f)
     return (2. * intersection + smooth) / (tf.reduce_sum(y_true_f) + tf.reduce_sum(y_pred_f) + smooth)
 
-import tensorflow as tf
-
-@tf.keras.utils.register_keras_serializable()
-def dice_loss(y_true, y_pred, smooth=1e-6):
-    y_true_f = tf.reshape(y_true, (tf.shape(y_true)[0], -1))  # Mantiene la dimensión del batch
-    y_pred_f = tf.reshape(y_pred, (tf.shape(y_pred)[0], -1))  # Mantiene la dimensión del batch
-    
-    intersection = tf.reduce_sum(y_true_f * y_pred_f, axis=1)  # Suma por cada muestra
-    dice_per_sample = (2. * intersection + smooth) / (tf.reduce_sum(y_true_f, axis=1) + tf.reduce_sum(y_pred_f, axis=1) + smooth)
-    
-    return 1 - tf.reduce_mean(dice_per_sample)  # Promedia la pérdida en el batch
 
 
-@tf.keras.utils.register_keras_serializable()
-def iou_loss(y_true, y_pred, smooth=1e-6):
-    y_true_f = tf.reshape(y_true, (-1,))
-    y_pred_f = tf.reshape(y_pred, (-1,))
-
-    intersection = tf.reduce_sum(y_true_f * y_pred_f)
-    union = tf.reduce_sum(y_true_f) + tf.reduce_sum(y_pred_f) - intersection
-
-    iou = (intersection + smooth) / (union + smooth)
-    return 1 - iou  # Como es una loss, se minimiza
-
-
-
-
-# Precision positiva
-def positive_precision(y_true, y_pred, smooth=1e-6):
+def precision(y_true, y_pred, smooth=1e-6):
     y_true_f = tf.reshape(y_true, [-1])
-    # y_true_f = tf.cast(y_true_f, tf.float32)
     y_pred_f = tf.reshape(y_pred, [-1])
 
     y_pred_pos = tf.round(tf.clip_by_value(y_pred_f, 0, 1))
@@ -49,10 +22,9 @@ def positive_precision(y_true, y_pred, smooth=1e-6):
     precision = (true_positives + smooth) / (predicted_positives + smooth)
     return precision
 
-# Recall positiva
-def positive_recall(y_true, y_pred, smooth=1e-6):
+
+def recall(y_true, y_pred, smooth=1e-6):
     y_true_f = tf.reshape(y_true, [-1])
-    # y_true_f = tf.cast(y_true_f, tf.float32)
     y_pred_f = tf.reshape(y_pred, [-1])
 
     y_pred_pos = tf.round(tf.clip_by_value(y_pred_f, 0, 1))

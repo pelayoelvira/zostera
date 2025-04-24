@@ -10,7 +10,7 @@ from keras.callbacks import TensorBoard
 from model_script.keras_unet import get_model
 import keras
 from functools import partial
-from training_pipeline.loss import positive_precision, positive_recall, pixel_accuracy, CombinedLoss, dice_loss, iou_loss
+from training_pipeline.loss import precision, recall, pixel_accuracy, CombinedLoss
 from tifffile import imwrite  # Usamos imwrite en lugar de imsave
 
 # Rutas y patrón de archivos
@@ -111,7 +111,7 @@ alpha_value = 0.5
 model.compile(
     optimizer=keras.optimizers.AdamW(learning_rate=1e-4),
     loss=CombinedLoss(alpha=alpha_value),
-    metrics=[positive_precision, positive_recall, pixel_accuracy]
+    metrics=[precision, recall, pixel_accuracy]
 )
 
 

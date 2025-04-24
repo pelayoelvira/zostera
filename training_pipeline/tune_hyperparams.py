@@ -7,7 +7,7 @@ from tensorflow import keras
 import gc  # Para liberar memoria
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from model_script.keras_unet import get_model  
-from training_pipeline.loss import positive_precision, positive_recall, pixel_accuracy, CombinedLoss
+from training_pipeline.loss import precision, recall, pixel_accuracy, CombinedLoss
 from training_pipeline.load_dataset_v2 import load_dataset
 
 # Rutas y patrón de archivos
@@ -79,7 +79,7 @@ def objective(trial):
         model.compile(
             optimizer=keras.optimizers.AdamW(learning_rate=learning_rate),
             loss=CombinedLoss(alpha=0.5),
-            metrics=[positive_precision, positive_recall, pixel_accuracy]
+            metrics=[precision, recall, pixel_accuracy]
         )
 
         # Entrenar el modelo
