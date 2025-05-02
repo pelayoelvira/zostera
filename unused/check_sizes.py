@@ -19,8 +19,8 @@ for image_file in os.listdir(resized_image_dir):
     mask_path = os.path.join(resized_mask_dir, mask_file)
     
     # Cargar la imagen y la máscara
-    large_image = tiff.imread(image_path) # Convertir a uint16
-    large_mask = tiff.imread(mask_path)  # Mantener como uint8
+    large_image = tiff.imread(image_path)
+    large_mask = tiff.imread(mask_path)  
 
     # Imprimir las dimensiones y el tipo de datos
     print('El formato de tamaño de la imagen es alto x ancho x canales:')
