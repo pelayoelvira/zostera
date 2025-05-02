@@ -4,11 +4,10 @@ from keras.models import load_model
 from patchify import patchify, unpatchify
 import rasterio
 from rasterio.enums import Resampling
-from keras.utils import normalize  # Para normalizar las imágenes
+from keras.utils import normalize  
 import os
 import cv2
 
-# Establecer la GPU a utilizar
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # Verificar si TensorFlow reconoce la GPU especificada
@@ -23,30 +22,8 @@ if physical_devices:
 else:
     print("No se encontró GPU disponible.")
 
-# Definición de funciones personalizadas
 @tf.keras.utils.register_keras_serializable()
-def dice_loss(y_true, y_pred, smooth=1e-6):
-    y_true_f = tf.reshape(y_true, (tf.shape(y_true)[0], -1))  # Mantiene la dimensión del batch
-    y_pred_f = tf.reshape(y_pred, (tf.shape(y_pred)[0], -1))  # Mantiene la dimensión del batch
-    
-    intersection = tf.reduce_sum(y_true_f * y_pred_f, axis=1)  # Suma por cada muestra
-    dice_per_sample = (2. * intersection + smooth) / (tf.reduce_sum(y_true_f, axis=1) + tf.reduce_sum(y_pred_f, axis=1) + smooth)
-    
-    return 1 - tf.reduce_mean(dice_per_sample)  # Promedia la pérdida en el batch
-
-@tf.keras.utils.register_keras_serializable()
-def iou_loss(y_true, y_pred, smooth=1e-6):
-    y_true_f = tf.reshape(y_true, (-1,))
-    y_pred_f = tf.reshape(y_pred, (-1,))
-
-    intersection = tf.reduce_sum(y_true_f * y_pred_f)
-    union = tf.reduce_sum(y_true_f) + tf.reduce_sum(y_pred_f) - intersection
-
-    iou = (intersection + smooth) / (union + smooth)
-    return 1 - iou  # Como es una loss, se minimiza
-
-@tf.keras.utils.register_keras_serializable()
-def positive_precision(y_true, y_pred, smooth=1e-6):
+def precision(y_true, y_pred, smooth=1e-6):
     y_true_f = tf.reshape(y_true, [-1])
     y_pred_f = tf.reshape(y_pred, [-1])
     y_pred_pos = tf.round(tf.clip_by_value(y_pred_f, 0, 1))
@@ -56,7 +33,7 @@ def positive_precision(y_true, y_pred, smooth=1e-6):
     return precision
 
 @tf.keras.utils.register_keras_serializable()
-def positive_recall(y_true, y_pred, smooth=1e-6):
+def recall(y_true, y_pred, smooth=1e-6):
     y_true_f = tf.reshape(y_true, [-1])
     y_pred_f = tf.reshape(y_pred, [-1])
     y_pred_pos = tf.round(tf.clip_by_value(y_pred_f, 0, 1))
@@ -73,22 +50,6 @@ def pixel_accuracy(y_true, y_pred):
     accuracy = tf.reduce_mean(tf.cast(correct_pixels, tf.float32))
     return accuracy
 
-def precision_loss(y_true, y_pred, smooth=1e-6):
-    y_true_f = tf.reshape(y_true, [-1])
-    y_pred_f = tf.reshape(y_pred, [-1])
-    # Eliminamos tf.round para evitar problemas con gradientes
-    true_positives = tf.reduce_sum(y_true_f * y_pred_f)
-    predicted_positives = tf.reduce_sum(y_pred_f)
-    precision = (true_positives + smooth) / (predicted_positives + smooth)
-    return 1 - precision
-
-def recall_loss(y_true, y_pred, smooth=1e-6):
-    y_true_f = tf.reshape(y_true, [-1])
-    y_pred_f = tf.reshape(y_pred, [-1])
-    true_positives = tf.reduce_sum(y_true_f * y_pred_f)
-    actual_positives = tf.reduce_sum(y_true_f)
-    recall = (true_positives + smooth) / (actual_positives + smooth)
-    return 1 - recall
 
 @tf.keras.utils.register_keras_serializable()
 class CombinedLoss(tf.keras.losses.Loss):
@@ -116,14 +77,12 @@ class CombinedLoss(tf.keras.losses.Loss):
         return config
 
 
-# Carga del modelo con los objetos personalizados
-model = load_model('experiment_2/filtrado_2.keras', custom_objects={'CombinedLoss': CombinedLoss,
-                                                  'positive_precision': positive_precision,
-                                                  'positive_recall': positive_recall,
+model = load_model('best_model_tuned_2.keras', custom_objects={'CombinedLoss': CombinedLoss,
+                                                  'precision': precision,
+                                                  'recall': recall,
                                                   'pixel_accuracy': pixel_accuracy})
 
-# Carga la imagen de alta resolución usando rasterio
-input_path = 'Data/RESIZED/image_to_predict_2/RESIZED_20240411_VILLAVICIOSA_BORNIZAL3.tif'
+input_path = 'Data/RESIZED/image_to_predict/RESIZED_20240411_VILLAVICIOSA_BORNIZAL3.tif'
 with rasterio.open(input_path) as src:
     imagen = src.read(out_shape=(src.count, src.height, src.width), resampling=Resampling.nearest)
     imagen = np.moveaxis(imagen, 0, -1)  # Cambiar el eje para tener (alto, ancho, canales)
@@ -185,18 +144,17 @@ mascara_predicha = unpatchify(predicted_patches, (nuevo_alto, nuevo_ancho))
 mascara_predicha = cv2.resize(mascara_predicha, (imagen.shape[1], imagen.shape[0]), interpolation=cv2.INTER_NEAREST)
 
 # Actualiza los metadatos originales para la máscara predicha
-output_mask_path = 'experiment_2/filtrado_2.tif'
+output_mask_path = 'best_model_tuned.tif'
 output_meta = original_meta.copy()
 output_meta.update({
     "driver": "GTiff",
     "height": mascara_predicha.shape[0],
     "width": mascara_predicha.shape[1],
-    "count": 1,  # Solo una capa para la máscara
+    "count": 1,  
     "dtype": 'uint8',
     "transform": original_transform,  # Mantener la transformación original
     "crs": original_crs,  # Mantener el CRS original
 })
 
-# Guardar la máscara predicha completa con los metadatos originales
 with rasterio.open(output_mask_path, 'w', **output_meta) as dst:
     dst.write(mascara_predicha, 1)

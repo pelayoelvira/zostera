@@ -4,6 +4,7 @@ from rasterio.transform import rowcol
 import numpy as np
 from shapely.geometry import box
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 def calculate_accuracy(geojson_path, tiff_path, rgb_path):
     # Cargar el groundtruth
@@ -52,7 +53,6 @@ def calculate_accuracy(geojson_path, tiff_path, rgb_path):
         
         # Convertir las coordenadas en índices de píxel para la máscara
         r, col = rowcol(transform, longitude, latitude)
-        # Convertir las coordenadas en índices de píxel para la imagen RGB
         rgb_row, rgb_col = rowcol(rgb_transform, longitude, latitude)
         
         # Verificar en la imagen RGB para descartar puntos en zonas de saturación (blanca)
@@ -87,28 +87,29 @@ def calculate_accuracy(geojson_path, tiff_path, rgb_path):
     print(f"FP (False Positives): {fp}")
     print(f"FN (False Negatives): {fn}")
 
-    # Create and save a confusion matrix figure using seaborn
-    import matplotlib.pyplot as plt
+    sns.set_theme(style="whitegrid", palette="pastel",context='paper', font_scale=1.3)  
 
+
+    # Matriz de confusión
     conf_matrix = np.array([[tp, fp],
                             [fn, tn]])
-
     plt.figure(figsize=(6, 4))
     ax = sns.heatmap(conf_matrix, annot=True, fmt="d", cbar=False,
-                     xticklabels=["Predicted Positive", "Predicted Negative"],
-                     yticklabels=["Real Positive", "Real Negative"])
-    ax.set_xlabel("Prediction")
-    ax.set_ylabel("Real")
-    ax.set_title("Confusion Matrix")
+                    cmap=sns.light_palette("#4E79A7", reverse=False, as_cmap=True),
+                    xticklabels=["Positivo predicho", "Negativo predicho"],
+                    yticklabels=["Positivo real", "Negativo real"])
+    ax.set_xlabel("Predicción")
+    ax.set_ylabel("Valor real")
     plt.tight_layout()
-    plt.savefig("confusion_matrix_filtrado2.svg", format="svg")
+
+    # Guardar como SVG
+    plt.savefig("confusion_matrix_tuned.svg", format="svg")
     plt.close()
     return accuracy
 
-# Ejemplo de uso
 geojson_path = 'Data/groundtruth_Villaviciosa.geojson'
 real_mask = 'Data/RESIZED/image_to_predict/RESIZED_MASK_20240411_VILLAVICIOSA_BORNIZAL3.tif'
-mask = 'experiment_2/filtrado_2.tif'
+mask = 'best_model_tuned.tif'
 rgb_path = 'Data/RESIZED/image_to_predict/RESIZED_20240411_VILLAVICIOSA_BORNIZAL3.tif'
 
 accuracy = calculate_accuracy(geojson_path, mask, rgb_path)
