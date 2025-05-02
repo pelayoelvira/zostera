@@ -1,7 +1,7 @@
 from keras import layers
 import keras
 
-def get_model(img_size, dropout_rate=0.1):
+def get_model(img_size):
     inputs = keras.Input(shape=img_size + (3,))
 
     ### [Primera mitad de la red: downsampling] ###
@@ -18,12 +18,10 @@ def get_model(img_size, dropout_rate=0.1):
         x = layers.Activation("relu")(x)
         x = layers.SeparableConv2D(filters, 3, padding="same")(x)
         x = layers.BatchNormalization()(x)
-        x = layers.Dropout(dropout_rate)(x)  # Dropout ajustable
 
         x = layers.Activation("relu")(x)
         x = layers.SeparableConv2D(filters, 3, padding="same")(x)
         x = layers.BatchNormalization()(x)
-        x = layers.Dropout(dropout_rate)(x)  # Dropout ajustable
 
         x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
 
@@ -38,12 +36,10 @@ def get_model(img_size, dropout_rate=0.1):
         x = layers.Activation("relu")(x)
         x = layers.Conv2DTranspose(filters, 3, padding="same")(x)
         x = layers.BatchNormalization()(x)
-        x = layers.Dropout(dropout_rate)(x)  # Dropout ajustable
 
         x = layers.Activation("relu")(x)
         x = layers.Conv2DTranspose(filters, 3, padding="same")(x)
         x = layers.BatchNormalization()(x)
-        x = layers.Dropout(dropout_rate)(x)  # Dropout ajustable
 
         x = layers.UpSampling2D(2)(x)
 
