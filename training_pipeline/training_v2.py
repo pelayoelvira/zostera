@@ -11,26 +11,21 @@ from model_script.keras_unet import get_model
 import keras
 from functools import partial
 from training_pipeline.loss import precision, recall, pixel_accuracy, CombinedLoss
-from tifffile import imwrite  # Usamos imwrite en lugar de imsave
 
-# Rutas y patrón de archivos
+
 image_dir = "Data/filtered_patches/filtered_images_2/*.tif"
 mask_dir = "Data/filtered_patches/filtered_masks_2/*.tif"
 
-# Cargar los datasets y contadores de ejemplos
 train_ds, val_ds, test_ds, train_count, val_count, test_count = load_dataset(image_dir, mask_dir)
 
 img_height = 512
 img_width = 512
 batch_size = 32
 
-# Preparar el dataset de entrenamiento (se repite indefinidamente),
-# y agrupar en batches con prefetch para rendimiento
 train_dataset = train_ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 val_dataset = val_ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 test_dataset = test_ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
-# Configuración de la GPU
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 physical_devices = tf.config.list_physical_devices('GPU')
 if physical_devices:
@@ -43,7 +38,6 @@ if physical_devices:
 else:
     print("No se encontró GPU disponible.")
 
-# # Crear el modelo (asegúrate de que get_model acepte el tamaño de entrada adecuado)
 model = get_model(img_size=(img_height, img_width))
 model.summary()
 
@@ -96,24 +90,19 @@ class TimeLoggingCallback(keras.callbacks.Callback):
 
 # Callback para guardar el mejor modelo basado en la pérdida de validación
 checkpoint = ModelCheckpoint(
-    "experiment_2/filtardo_2.keras",  # Nombre del archivo para guardar
-    monitor="val_loss",  # Métrica que se supervisará
-    save_best_only=True,  # Solo guarda el mejor modelo
-    mode="min",  # Queremos minimizar la pérdida
-    verbose=1  # Mensajes de guardado
+    "experiment_2/filtardo_2.keras", 
+    monitor="val_loss", 
+    save_best_only=True,  
+    mode="min", 
+    verbose=1 
 )
 
-
-# Define el valor de alpha que deseas
 alpha_value = 0.5
-
-# Compila el modelo usando la clase de pérdida personalizada
 model.compile(
     optimizer=keras.optimizers.AdamW(learning_rate=1e-4),
     loss=CombinedLoss(alpha=alpha_value),
     metrics=[precision, recall, pixel_accuracy]
 )
-
 
 # Calcular los pasos por época usando el número de ejemplos de entrenamiento
 steps_per_epoch = train_count // batch_size
@@ -129,7 +118,7 @@ model.fit(
 
 
 # Evaluar en el conjunto de test
-test_loss, test_positive_precision, test_positive_recall, test_pixel_accuracy = model.evaluate(test_dataset, verbose=2)
+test_loss, test_pixel_accuracy, test_positive_precision, test_positive_recall = model.evaluate(test_dataset, verbose=2)
 print("\nResultados en el conjunto de test:")
 print(f"Loss: {test_loss:.4f}")
 print(f"Positive Precision: {test_positive_precision:.4f}")

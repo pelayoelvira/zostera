@@ -10,7 +10,6 @@ from model_script.keras_unet import get_model
 from training_pipeline.loss import precision, recall, pixel_accuracy, CombinedLoss
 from training_pipeline.load_dataset_v2 import load_dataset
 
-# Rutas y patrón de archivos
 image_dir = "Data/filtered_patches/filtered_images/*.tif"
 mask_dir = "Data/filtered_patches/filtered_masks/*.tif"
 
@@ -20,7 +19,6 @@ train_ds, val_ds, test_ds, train_count, val_count, test_count = load_dataset(ima
 img_height = 512
 img_width = 512
 
-# Configuración de la GPU
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 physical_devices = tf.config.list_physical_devices('GPU')
 if physical_devices:
@@ -65,24 +63,20 @@ def objective(trial):
         train_dataset = train_ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
         val_dataset = val_ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
-        # Crear el modelo con los hiperparámetros
         model = get_model(img_size=(img_height, img_width))
 
-        # Callbacks dinámicos
         early_stopping = EarlyStopping(monitor='val_loss', patience=early_stopping_patience, mode='min', min_delta=0.000001)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=reduce_lr_factor, patience=reduce_lr_patience, min_lr=1e-6)
         checkpoint = ModelCheckpoint(
             "best_model_tuned_2.keras", monitor="val_loss", save_best_only=True, mode="min", verbose=1
         )
 
-        # Compilar el modelo
         model.compile(
             optimizer=keras.optimizers.AdamW(learning_rate=learning_rate),
             loss=CombinedLoss(alpha=0.5),
             metrics=[precision, recall, pixel_accuracy]
         )
 
-        # Entrenar el modelo
         history = model.fit(
             train_dataset,
             epochs=500,
@@ -91,7 +85,6 @@ def objective(trial):
             verbose=2
         )
 
-        # Evaluar en el conjunto de validación
         val_loss = min(history.history['val_loss'])
 
         return val_loss
@@ -101,17 +94,15 @@ def objective(trial):
         tf.keras.backend.clear_session()
         gc.collect()
 
-# Configurar Optuna para guardar en SQLite (sin sobrescribir la base de datos)
+# Configurar Optuna para guardar en SQLite 
 study = optuna.create_study(direction="minimize", storage="sqlite:///optuna_study_combined_2.db", load_if_exists=True)
 
-# Optimizar
 study.optimize(objective, n_trials=30, n_jobs=1)
 
-# Imprimir resultados
 print("Best trial:")
 best_trial = study.best_trial
 print(f"  Value: {best_trial.value}")
 print("  Params:")
 for key, value in best_trial.params.items():
     print(f"    {key}: {value}")
-# Comando para iniciar el dashboard: optuna-dashboard sqlite:///optuna_study_combined.db
+# dashboard: optuna-dashboard sqlite:///optuna_study_combined.db

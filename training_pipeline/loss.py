@@ -37,7 +37,7 @@ def pixel_accuracy(y_true, y_pred):
 
 
 class CombinedLoss(tf.keras.losses.Loss):
-    def __init__(self, alpha=0.6, smooth=1e-6, name="combined_loss", **kwargs):
+    def __init__(self, alpha=0.5, smooth=1e-6, name="combined_loss", **kwargs):
         super(CombinedLoss, self).__init__(name=name, **kwargs)
         self.alpha = alpha
         self.smooth = smooth
