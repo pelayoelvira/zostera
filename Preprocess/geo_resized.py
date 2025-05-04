@@ -17,7 +17,6 @@ def resize_rasters(image_dir, mask_dir, resized_image_dir, resized_mask_dir, dst
     Returns:
         None
     """
-    # Crear carpetas de salida si no existen
     os.makedirs(resized_image_dir, exist_ok=True)
     os.makedirs(resized_mask_dir, exist_ok=True)
 
@@ -72,14 +71,13 @@ def resize_rasters(image_dir, mask_dir, resized_image_dir, resized_mask_dir, dst
         resized_mask_path = os.path.join(resized_mask_dir, f"RESIZED_{mask_file}")
 
         if not os.path.exists(mask_path):
-            print(f"Advertencia: Máscara no encontrada para {image_file}.")
-            continue
+            raise FileNotFoundError(f"Máscara no encontrada para {image_file}.")
 
         try:
             # Procesar la imagen con resampling bilinear
             process_raster(image_path, resized_image_path, Resampling.bilinear, dst_res)
 
-            # Procesar la máscara con resampling nearest
+            # Procesar la máscara con resampling nearest neighbor
             process_raster(mask_path, resized_mask_path, Resampling.nearest, dst_res)
 
             print(f"Procesados: {image_file} y {mask_file}")

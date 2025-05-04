@@ -14,7 +14,7 @@ def poly_from_utm(geom, transform):
       transform: transformación de la imagen ráster.
       
     Retorna:
-      Una lista de polígonos reproyectados (cada uno con sus huecos, si los tiene).
+      Una lista de polígonos reproyectados en el sistema de coordenadas de la imagen.
     """
     # Si la geometría es un polígono simple, se reproyecta su contorno exterior y sus huecos.
     if geom.geom_type == 'Polygon':
@@ -38,7 +38,6 @@ input_dir = r'Data\0_orthomosaics'     # Carpeta con los archivos ráster
 mask_dir = r'Data\MASKS__'             # Carpeta para guardar las máscaras
 shape_path = r'Data\Nanozostera_noltei.geojson'  # Archivo GeoJSON
 
-# Crear la carpeta de máscaras si no existe
 os.makedirs(mask_dir, exist_ok=True)
 
 # Leer el GeoJSON y filtrar por localidad

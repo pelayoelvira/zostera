@@ -18,13 +18,12 @@ def postprocess_masks(resized_image_dir, resized_mask_dir, output_mask_dir):
     Returns:
         None
     """
-    # Crear el directorio de salida si no existe
     os.makedirs(output_mask_dir, exist_ok=True)
 
     # Iterar sobre las imágenes redimensionadas
     for image_file in os.listdir(resized_image_dir):
         if not image_file.endswith(".tif"):
-            continue  # Ignorar archivos que no sean TIFF
+            continue  
         
         # Construir el nombre de la máscara correspondiente
         mask_file = f"RESIZED_MASK{image_file[7:]}"  # Eliminar "RESIZED_" del nombre de la imagen
@@ -33,8 +32,7 @@ def postprocess_masks(resized_image_dir, resized_mask_dir, output_mask_dir):
         mask_path = os.path.join(resized_mask_dir, mask_file)
         
         if not os.path.exists(mask_path):
-            print(f"Máscara no encontrada para {image_file}, omitiendo.")
-            continue  # Saltar si no se encuentra la máscara correspondiente
+            raise FileNotFoundError(f"Máscara no encontrada para {image_file}")
 
         try:
             # Cargar la imagen y la máscara usando rasterio
@@ -43,15 +41,23 @@ def postprocess_masks(resized_image_dir, resized_mask_dir, output_mask_dir):
                 image_meta = src_image.meta
 
             with rasterio.open(mask_path) as src_mask:
-                binary_image = src_mask.read(1)  # Leer solo la primera banda
+                binary_image = src_mask.read(1) 
                 mask_meta = src_mask.meta
 
             # Verificar que ambas imágenes tengan el mismo tamaño
             if rgb_image.shape[1:] != binary_image.shape:
                 raise ValueError(f"Las imágenes no tienen el mismo tamaño: {image_file} y su máscara correspondiente.")
 
-            # Crear una máscara donde la imagen RGB es completamente blanca (65535, 65535, 65535 o 255, 255, 255)
-            white_mask = np.all(np.logical_or(rgb_image == 65535, rgb_image == 255), axis=0)
+            # Determinar el valor de blanco según el tipo de dato de la imagen RGB
+            if rgb_image.dtype == np.uint8:
+                white_value = 255
+            elif rgb_image.dtype == np.uint16:
+                white_value = 65535
+            else:
+                raise ValueError("Tipo de datos de la imagen RGB no soportado. Use uint8 o uint16.")
+
+            # Crear una máscara donde la imagen RGB es completamente blanca
+            white_mask = np.all(rgb_image == white_value, axis=0)
 
             # Modificar la imagen binaria: donde la máscara es True, se ponen a 0 (negro)
             binary_image[white_mask] = 0

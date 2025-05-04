@@ -1,12 +1,11 @@
-from Pre_process.geo_resized import resize_rasters
-from Pre_process.RGB_converter import filter_rgb_channels
-from Pre_process.postprocess import postprocess_masks
-from Pre_process.create_patches import generate_patches
-from Pre_process.filter_patches import filter_and_save_non_white_patches
+from Preprocess.geo_resized import resize_rasters
+from Preprocess.RGB_converter import filter_rgb_channels
+from Preprocess.postprocess import postprocess_masks
+from Preprocess.create_patches import generate_patches
+from Preprocess.filter_patches import filter_and_save_non_white_patches
 import os
 import shutil  
 
-print(r'Starting the pre-processing pipeline...')
 # Directorios de entrada y salida para las imágenes y las máscaras
 input_image_dir = r'Data/0_orthomosaics'
 input_mask_dir = r'Data/MASKS'
@@ -27,11 +26,10 @@ patch_size = 512
 # Directorio donde se moverán las imágenes y máscaras seleccionadas
 predict_image_dir = r'Data/RESIZED/image_to_predict_og'
 
-# Archivos específicos a mover
+# Archivos específicos a mover para validacion a modo de produccion
 image_to_move = "RESIZED_20240411_VILLAVICIOSA_BORNIZAL3.tif"
 mask_to_move = "RESIZED_MASK_20240411_VILLAVICIOSA_BORNIZAL3.tif"
 
-# Crear el directorio si no existe
 os.makedirs(predict_image_dir, exist_ok=True)
 
 if __name__ == "__main__":
@@ -43,15 +41,15 @@ if __name__ == "__main__":
     
     print("Creando directorios de salida...")
     
-    # # Paso 1: Redimensionar imágenes y máscaras
-    # print("Iniciando redimensionado de imágenes y máscaras...")
-    # resize_rasters(input_image_dir, input_mask_dir, resized_image_dir, resized_mask_dir, dst_res=None) 
-    # print("Redimensionado completado.")
+    # Paso 1: Redimensionar imágenes y máscaras
+    print("Iniciando redimensionado de imágenes y máscaras...")
+    resize_rasters(input_image_dir, input_mask_dir, resized_image_dir, resized_mask_dir, dst_res=None) 
+    print("Redimensionado completado.")
 
-    # # Paso 2: Filtrar canales RGB
-    # print("Iniciando filtrado de canales RGB...")
-    # filter_rgb_channels(resized_image_dir, resized_image_dir)  # Filtrado de los canales RGB en las imágenes redimensionadas
-    # print("Filtrado de canales RGB completado.")
+    # Paso 2: Filtrar canales RGB
+    print("Iniciando filtrado de canales RGB...")
+    filter_rgb_channels(resized_image_dir, resized_image_dir)  # Filtrado de los canales RGB en las imágenes redimensionadas
+    print("Filtrado de canales RGB completado.")
 
     # Paso 3: Postprocesar máscaras
     print("Iniciando postprocesado de máscaras...")

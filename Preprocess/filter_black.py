@@ -16,11 +16,9 @@ def filter_black_patches(input_images_dir, input_masks_dir, output_images_dir, o
     Salida:
         Las imágenes y máscaras filtradas se guardarán en los directorios de salida.
     """
-    # Crear los directorios de salida si no existen
     os.makedirs(output_images_dir, exist_ok=True)
     os.makedirs(output_masks_dir, exist_ok=True)
 
-    # Listar archivos en los directorios de entrada
     image_files = sorted(os.listdir(input_images_dir))
     mask_files = sorted(os.listdir(input_masks_dir))
 
@@ -48,5 +46,4 @@ if __name__ == "__main__":
     output_images_dir = "Data/filtered_patches/filtered_images_og"
     output_masks_dir = "Data/filtered_patches/filtered_masks_og"
 
-    # Ejecutar el filtro
     filter_black_patches(input_images_dir, input_masks_dir, output_images_dir, output_masks_dir, threshold=0.05)
