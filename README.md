@@ -1,4 +1,5 @@
 # Monitoring the Presence of Nanozostera noltei in the Villaviciosa Estuary
+Academic project for the Bachelor's Thesis (2025)
 
 This project is a collaboration between the Marine Angiosperm Ecology Group of the Spanish Institute of Oceanography (IEO-CSIC) and the Machine Learning area of the University of Oviedo. Its objective is to develop a deep neural network-based system for the automatic segmentation of Nanozostera noltei meadows in drone-captured images of the Villaviciosa estuary.
 
